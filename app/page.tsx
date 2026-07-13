@@ -56,6 +56,9 @@ export default function Home() {
   const [captions, setCaptions] = useState(false);
   const [editorTheme, setEditorTheme] = useState<"light"|"dark">("light");
   const [projectId, setProjectId] = useState("");
+  const [cuts, setCuts] = useState<number[]>([]);
+  const [cutHistory, setCutHistory] = useState<number[][]>([]);
+  const [redoCuts, setRedoCuts] = useState<number[][]>([]);
 
   const activeFilter = useMemo(() => filters.find((f) => f.name === filter)!, [filter]);
   const timelineWidth = duration ? Math.max(0, ((trimEnd - trimStart) / duration) * 100) : 100;
@@ -64,7 +67,7 @@ export default function Home() {
   useEffect(() => () => { if (src) URL.revokeObjectURL(src); }, [src]);
   useEffect(() => { if (new URLSearchParams(window.location.search).get("editor") === "1") { if(localStorage.getItem("solara-profile"))setStarted(true); else location.href="/signin?returnTo=/?editor=1"; } }, []);
   useEffect(() => { const saved=localStorage.getItem("solara-theme"); if(saved==="dark"||saved==="light")setEditorTheme(saved); }, []);
-  useEffect(()=>{const id=new URLSearchParams(location.search).get("project");if(!id)return;getProject(id).then(project=>{if(!project)return;const file=new File([project.video],project.fileName,{type:project.video.type});setProjectId(project.id);setSourceFile(file);setSrc(URL.createObjectURL(file));setFileName(project.name);const e=project.editState;setFilter((e.filter as FilterName)||"Clean");setSpeed(Number(e.speed)||1);setMuted(Boolean(e.muted));setCrop(Number(e.crop)||100);setRotation(Number(e.rotation)||0);setTrimStart(Number(e.trimStart)||0);setTrimEnd(Number(e.trimEnd)||project.duration);setStarted(true)})},[]);
+  useEffect(()=>{const id=new URLSearchParams(location.search).get("project");if(!id)return;getProject(id).then(project=>{if(!project)return;const file=new File([project.video],project.fileName,{type:project.video.type});setProjectId(project.id);setSourceFile(file);setSrc(URL.createObjectURL(file));setFileName(project.name);const e=project.editState;setFilter((e.filter as FilterName)||"Clean");setSpeed(Number(e.speed)||1);setMuted(Boolean(e.muted));setCrop(Number(e.crop)||100);setRotation(Number(e.rotation)||0);setTrimStart(Number(e.trimStart)||0);setTrimEnd(Number(e.trimEnd)||project.duration);setCuts(Array.isArray(e.cuts)?e.cuts as number[]:[]);setStarted(true)})},[]);
 
   const loadFile = (file?: File) => {
     if (!file || !file.type.startsWith("video/")) {
@@ -78,6 +81,7 @@ export default function Home() {
     setNotice("");
     setPlaying(false);
     setThumbnails([]);
+    setCuts([]);setCutHistory([]);setRedoCuts([]);
   };
 
   const makeThumbnails = async (videoSrc: string, videoDuration: number) => {
@@ -111,6 +115,15 @@ export default function Home() {
     if (v.currentTime >= trimEnd - .05) v.currentTime = trimStart;
     if (v.paused) v.play(); else v.pause();
   };
+
+  const addCut = () => {
+    if(!src){setNotice("Upload a video before adding a cut.");return}
+    if(current<=trimStart+.05||current>=trimEnd-.05){setNotice("Move the playhead inside the clip to split it.");return}
+    if(cuts.some(c=>Math.abs(c-current)<.08)){setNotice("There’s already a cut here.");return}
+    setCutHistory(h=>[...h,cuts]);setRedoCuts([]);setCuts([...cuts,current].sort((a,b)=>a-b));setNotice(`Split added at ${formatTime(current)}.`);
+  };
+  const undoCut = () => {if(!cutHistory.length)return;const previous=cutHistory[cutHistory.length-1];setRedoCuts(r=>[cuts,...r]);setCuts(previous);setCutHistory(h=>h.slice(0,-1));};
+  const redoCut = () => {if(!redoCuts.length)return;const next=redoCuts[0];setCutHistory(h=>[...h,cuts]);setCuts(next);setRedoCuts(r=>r.slice(1));};
 
   const seek = (value: number) => {
     const v = videoRef.current;
@@ -211,9 +224,9 @@ export default function Home() {
     if (!sourceFile) { setNotice("Upload a video before saving your project."); return; }
     setSaving(true);
     window.setTimeout(()=>setSaving(false),350);
-    try { const id=projectId||crypto.randomUUID();if(!projectId)setProjectId(id);await putProject({id,name:fileName,fileName:sourceFile.name,video:sourceFile,duration,thumbnail:thumbnails[0],editState:{trimStart,trimEnd,filter,speed,muted,crop,rotation},updatedAt:new Date().toISOString()});setNotice("Project saved to your dashboard."); } catch { setNotice("Couldn’t save on this device."); } finally {setSaving(false);}
+    try { const id=projectId||crypto.randomUUID();if(!projectId)setProjectId(id);await putProject({id,name:fileName,fileName:sourceFile.name,video:sourceFile,duration,thumbnail:thumbnails[0],editState:{trimStart,trimEnd,filter,speed,muted,crop,rotation,cuts},updatedAt:new Date().toISOString()});setNotice("Project saved to your dashboard."); } catch { setNotice("Couldn’t save on this device."); } finally {setSaving(false);}
   };
-  useEffect(()=>{if(!sourceFile||!duration)return;const timer=window.setTimeout(()=>{const id=projectId||crypto.randomUUID();if(!projectId)setProjectId(id);putProject({id,name:fileName,fileName:sourceFile.name,video:sourceFile,duration,thumbnail:thumbnails[0],editState:{trimStart,trimEnd,filter,speed,muted,crop,rotation},updatedAt:new Date().toISOString()}).catch(()=>{})},200);return()=>clearTimeout(timer)},[sourceFile,duration,fileName,trimStart,trimEnd,filter,speed,muted,crop,rotation,thumbnails,projectId]);
+  useEffect(()=>{if(!sourceFile||!duration)return;const timer=window.setTimeout(()=>{const id=projectId||crypto.randomUUID();if(!projectId)setProjectId(id);putProject({id,name:fileName,fileName:sourceFile.name,video:sourceFile,duration,thumbnail:thumbnails[0],editState:{trimStart,trimEnd,filter,speed,muted,crop,rotation,cuts},updatedAt:new Date().toISOString()}).catch(()=>{})},200);return()=>clearTimeout(timer)},[sourceFile,duration,fileName,trimStart,trimEnd,filter,speed,muted,crop,rotation,cuts,thumbnails,projectId]);
 
   if (!started) return (
     <main className="landing">
@@ -253,7 +266,7 @@ export default function Home() {
       <header className="topbar">
         <a className="brand" href="/dashboard"><span className="brand-mark">✦</span><span>SOLARA</span><b>AI EDITOR</b></a>
         <div className="project-title"><span className="status-dot" />{fileName}<span className="saved">Autosaved</span></div>
-        <div className="top-actions"><a className="account-link" href="/dashboard">▦ Dashboard</a><button className="save-btn" onClick={saveProject} disabled={saving||!src}>{saving?"Saving…":"Save"}</button><button className="export" onClick={exportVideo} disabled={exporting || !src}>{exporting ? "Rendering…" : "Export"}<span>↗</span></button></div>
+        <div className="top-actions"><button className="icon-btn" onClick={undoCut} disabled={!cutHistory.length} aria-label="Undo cut" title="Undo cut">↶</button><button className="icon-btn" onClick={redoCut} disabled={!redoCuts.length} aria-label="Redo cut" title="Redo cut">↷</button><a className="account-link" href="/dashboard">▦ Dashboard</a><button className="save-btn" onClick={saveProject} disabled={saving||!src}>{saving?"Saving…":"Save"}</button><button className="export" onClick={exportVideo} disabled={exporting || !src}>{exporting ? "Rendering…" : "Export"}<span>↗</span></button></div>
       </header>
 
       <section className="workspace">
@@ -288,12 +301,13 @@ export default function Home() {
           </div>
 
           <div className="timeline-card">
-            <div className="timeline-head"><strong>Timeline</strong><div><button onClick={() => setSpeed(speed === 2 ? .5 : speed + .5)}>{speed}×</button><button onClick={() => {setTrimStart(0);setTrimEnd(duration)}}>Reset trim</button></div></div>
+            <div className="timeline-head"><strong>Timeline <small>{cuts.length?`${cuts.length+1} clips`:"1 clip"}</small></strong><div><button className="split-btn" onClick={addCut} disabled={!src}>✂ Split at playhead</button><button onClick={() => setSpeed(speed === 2 ? .5 : speed + .5)}>{speed}×</button><button onClick={() => {setTrimStart(0);setTrimEnd(duration)}}>Reset trim</button></div></div>
             <div className="clip-meta"><span>{src ? fileName : "No clip loaded"}</span><b>{formatTime(current)} / {formatTime(duration)}</b></div>
             <div className="ruler">{Array.from({length:7},(_,i)=><span key={i}>{formatTime(duration*(i/6))}</span>)}</div>
             <div className="track">
               <div className="track-fill" style={{left: `${duration ? trimStart/duration*100 : 0}%`, width: `${timelineWidth}%`}} />
               <div className="filmstrip">{thumbnails.length ? thumbnails.map((thumb,i)=><img key={i} src={thumb} alt="" draggable="false" />) : <div className="empty-strip">{src ? "Generating video preview…" : "Upload a video to build your timeline"}</div>}</div>
+              {cuts.map((cut,i)=><button key={cut} className="cut-marker" style={{left:`${duration?cut/duration*100:0}%`}} onClick={()=>seek(cut)} title={`Cut ${i+1} at ${formatTime(cut)}`}><span>✂</span></button>)}
               <div className="playhead" style={{left: `${duration ? current/duration*100 : 0}%`}}><span /></div>
             </div>
             <input className="scrubber" type="range" min={0} max={duration || 1} step="0.01" value={current} onChange={(e)=>seek(+e.target.value)} disabled={!src} aria-label="Video playhead" />

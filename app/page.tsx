@@ -216,7 +216,7 @@ export default function Home() {
       <nav className="landing-nav">
         <a className="solara-logo" href="#"><span>✦</span>SOLARA</a>
         <div className="nav-links"><a href="#features">Features</a><a href="#ai">AI Editor</a><a href="#how">How it works</a></div>
-        <div className="nav-account"><a href="/signin?returnTo=/dashboard">Sign in</a><button className="nav-cta" onClick={beginEditing}>Start creating <span>↗</span></button></div>
+        <div className="nav-account"><a href="/signin?returnTo=/dashboard">Sign in</a><button className="nav-cta" onClick={beginEditing}>Get started <span>↗</span></button></div>
       </nav>
       <section className="hero">
         <div className="sun-glow one"/><div className="sun-glow two"/>

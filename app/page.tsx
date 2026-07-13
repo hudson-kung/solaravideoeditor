@@ -54,6 +54,7 @@ export default function Home() {
   const timelineWidth = duration ? Math.max(0, ((trimEnd - trimStart) / duration) * 100) : 100;
 
   useEffect(() => () => { if (src) URL.revokeObjectURL(src); }, [src]);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("editor") === "1") setStarted(true); }, []);
 
   const loadFile = (file?: File) => {
     if (!file || !file.type.startsWith("video/")) {
@@ -208,7 +209,7 @@ export default function Home() {
       <nav className="landing-nav">
         <a className="solara-logo" href="#"><span>✦</span>SOLARA</a>
         <div className="nav-links"><a href="#features">Features</a><a href="#ai">AI Editor</a><a href="#how">How it works</a></div>
-        <div className="nav-account"><a href="/signin-with-chatgpt?return_to=/">Sign in</a><button className="nav-cta" onClick={()=>setStarted(true)}>Start creating <span>↗</span></button></div>
+        <div className="nav-account"><a href="/signin?returnTo=/?editor=1">Sign in</a><button className="nav-cta" onClick={()=>setStarted(true)}>Start creating <span>↗</span></button></div>
       </nav>
       <section className="hero">
         <div className="sun-glow one"/><div className="sun-glow two"/>
@@ -236,7 +237,7 @@ export default function Home() {
       <header className="topbar">
         <div className="brand"><span className="brand-mark">✦</span><span>SOLARA</span><b>AI EDITOR</b></div>
         <div className="project-title"><span className="status-dot" />{fileName}<span className="saved">Saved locally</span></div>
-        <div className="top-actions"><a className="account-link" href="/signin-with-chatgpt?return_to=/">◎ Account</a><button className="save-btn" onClick={saveProject} disabled={saving||!src}>{saving?"Saving…":"Save"}</button><button className="export" onClick={exportVideo} disabled={exporting || !src}>{exporting ? "Rendering…" : "Export"}<span>↗</span></button></div>
+        <div className="top-actions"><a className="account-link" href="/signin?returnTo=/?editor=1">◎ Account</a><button className="save-btn" onClick={saveProject} disabled={saving||!src}>{saving?"Saving…":"Save"}</button><button className="export" onClick={exportVideo} disabled={exporting || !src}>{exporting ? "Rendering…" : "Export"}<span>↗</span></button></div>
       </header>
 
       <section className="workspace">

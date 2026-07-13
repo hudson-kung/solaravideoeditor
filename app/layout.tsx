@@ -14,9 +14,9 @@ export const metadata: Metadata = {
     description: "Create brilliant videos with powerful editing tools, music, effects, timelines, and Solara AI.",
     url: "https://solaravideoeditor.vercel.app",
     siteName: "Solara",
-    images: [{ url: "/og-solara.png?v=2", width: 1728, height: 910, alt: "Solara — The world’s best video editor" }],
+    images: [{ url: "/og-solara-v3.png", width: 1728, height: 910, alt: "Solara — The world’s best video editor" }],
   },
-  twitter: { card: "summary_large_image", title: "Solara — The World’s Best Video Editor", description: "Create brilliant videos with Solara.", images: ["/og-solara.png?v=2"] },
+  twitter: { card: "summary_large_image", title: "Solara — The World’s Best Video Editor", description: "Create brilliant videos with Solara.", images: ["/og-solara-v3.png"] },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

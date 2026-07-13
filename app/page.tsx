@@ -49,6 +49,10 @@ export default function Home() {
   const [thumbnails, setThumbnails] = useState<string[]>([]);
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [activeTool, setActiveTool] = useState("Media");
+  const [overlayText, setOverlayText] = useState("");
+  const [sticker, setSticker] = useState("");
+  const [captions, setCaptions] = useState(false);
 
   const activeFilter = useMemo(() => filters.find((f) => f.name === filter)!, [filter]);
   const timelineWidth = duration ? Math.max(0, ((trimEnd - trimStart) / duration) * 100) : 100;
@@ -242,7 +246,7 @@ export default function Home() {
 
       <section className="workspace">
         <aside className="toolrail" aria-label="Editor tools">
-          {[['▣','Media'],['♫','Audio'],['T','Text'],['★','Stickers'],['✦','Effects'],['↝','Transitions'],['CC','Captions'],['◐','Filters'],['☷','Adjust'],['▤','Templates'],['AI','AI avatar']].map(([icon,label], i) => <button key={label} className={i === 0 ? "tool active" : "tool"} onClick={()=> ["Effects","Filters","Adjust"].includes(label) ? setPanel("adjust") : label==="AI avatar" ? setPanel("ai") : undefined}><span>{icon}</span>{label}</button>)}
+          {[['▣','Media'],['♫','Audio'],['T','Text'],['★','Stickers'],['✦','Effects'],['↝','Transitions'],['CC','Captions'],['◐','Filters'],['☷','Adjust'],['▤','Templates'],['AI','AI editor']].map(([icon,label]) => <button key={label} className={activeTool === label ? "tool active" : "tool"} onClick={()=>{setActiveTool(label);if(["Effects","Filters","Adjust"].includes(label))setPanel("adjust");if(label==="AI editor")setPanel("ai")}}><span>{icon}</span>{label}</button>)}
         </aside>
 
         <section className="stage-column">
@@ -259,6 +263,7 @@ export default function Home() {
               ) : (
                 <div className="video-shell" style={{width: `${crop}%`, transform: `rotate(${rotation}deg)`}}>
                   <video ref={videoRef} src={src} style={{filter: activeFilter.css}} muted={muted} onLoadedMetadata={(e) => { const d=e.currentTarget.duration; setDuration(d); setTrimStart(0); setTrimEnd(d); makeThumbnails(src,d); }} onTimeUpdate={(e) => { const t=e.currentTarget.currentTime; setCurrent(t); if (t >= trimEnd) {e.currentTarget.pause(); setPlaying(false)} }} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+                  {overlayText&&<div className="video-text-overlay">{overlayText}</div>}{sticker&&<div className="video-sticker">{sticker}</div>}{captions&&<div className="video-caption">This is your auto-caption preview</div>}
                 </div>
               )}
               <input ref={inputRef} type="file" accept="video/*" hidden onChange={(e: ChangeEvent<HTMLInputElement>) => loadFile(e.target.files?.[0])} />
@@ -285,7 +290,16 @@ export default function Home() {
         </section>
 
         <aside className="inspector">
-          <div className="inspector-tabs"><button className={panel==="ai"?"active":""} onClick={()=>setPanel("ai")}><span>✦</span> AI editor</button><button className={panel==="adjust"?"active":""} onClick={()=>setPanel("adjust")}>Adjust</button></div>
+          {!["Effects","Filters","Adjust","AI editor"].includes(activeTool) ? <div className="tool-panel">
+            <div className="tool-panel-head"><div><span>{activeTool==="Media"?"▣":activeTool==="Audio"?"♫":activeTool==="Text"?"T":activeTool==="Stickers"?"★":activeTool==="Transitions"?"↝":activeTool==="Captions"?"CC":"▤"}</span><strong>{activeTool}</strong></div></div>
+            {activeTool==="Media"&&<><button className="primary-tool-action" onClick={()=>inputRef.current?.click()}>＋ Import media</button><div className="media-library">{src?<div className="media-card"><div className="media-thumb">{thumbnails[0]?<img src={thumbnails[0]} alt="Video thumbnail"/>:<span>▶</span>}</div><b>{fileName}</b><small>{formatTime(duration)}</small></div>:<p>Your imported videos will appear here.</p>}</div></>}
+            {activeTool==="Audio"&&<><p className="tool-help">Control the original clip audio.</p><button className="setting-row" onClick={()=>setMuted(!muted)}><span>{muted?"Unmute original audio":"Mute original audio"}</span><b>{muted?"OFF":"ON"}</b></button><div className="asset-grid"><button onClick={()=>setNotice("Music library coming next.")}>♫ Music</button><button onClick={()=>setNotice("Sound effects library coming next.")}>◉ Sound effects</button></div></>}
+            {activeTool==="Text"&&<><p className="tool-help">Add a title directly over your video.</p><input className="tool-input" value={overlayText} onChange={e=>setOverlayText(e.target.value)} placeholder="Type your title…"/><div className="text-styles"><button onClick={()=>setOverlayText("YOUR STORY")}>BOLD</button><button onClick={()=>setOverlayText("A moment to remember")}>Elegant</button><button onClick={()=>setOverlayText("")}>Clear</button></div></>}
+            {activeTool==="Stickers"&&<><p className="tool-help">Choose a sticker for the preview.</p><div className="sticker-grid">{["🔥","✨","❤️","😂","⭐","☀️","🎬","🚀","💯"].map(s=><button key={s} onClick={()=>setSticker(sticker===s?"":s)}>{s}</button>)}</div></>}
+            {activeTool==="Transitions"&&<><p className="tool-help">Pick a transition style for your next split.</p><div className="transition-list">{["Dissolve","Fade to black","Slide left","Zoom","Flash"].map(t=><button key={t} onClick={()=>setNotice(`${t} transition selected. Add another clip to use it.`)}><i/>{t}<span>＋</span></button>)}</div></>}
+            {activeTool==="Captions"&&<><p className="tool-help">Generate and style subtitles for your video.</p><button className="primary-tool-action" onClick={()=>setCaptions(!captions)}>{captions?"Remove captions":"Generate auto captions"}</button><label className="caption-lang">Language<select><option>English (US)</option><option>Spanish</option><option>French</option></select></label></>}
+            {activeTool==="Templates"&&<><p className="tool-help">Apply a ready-made editing style.</p><div className="template-list"><button onClick={()=>{setFilter("Warm");setSpeed(1)}}><i className="warm"/><b>Golden hour</b><small>Warm · Cinematic</small></button><button onClick={()=>{setFilter("Cool");setSpeed(1.5)}}><i className="cool"/><b>Fast vlog</b><small>Cool · Energetic</small></button><button onClick={()=>{setFilter("Mono");setSpeed(.5)}}><i className="mono"/><b>Film noir</b><small>Mono · Slow</small></button></div></>}
+          </div> : <><div className="inspector-tabs"><button className={panel==="ai"?"active":""} onClick={()=>{setPanel("ai");setActiveTool("AI editor")}}><span>✦</span> AI editor</button><button className={panel==="adjust"?"active":""} onClick={()=>{setPanel("adjust");setActiveTool("Adjust")}}>Adjust</button></div>
           {panel === "ai" ? <div className="ai-panel">
             <div className="ai-head"><div className="ai-orb">✦</div><div><strong>Solara AI</strong><span><i /> Ready to edit</span></div></div>
             <div className="chat">{messages.map((m,i)=><div key={i} className={`bubble ${m.role}`}>{m.text}</div>)}{thinking&&<div className="bubble ai typing"><i/><i/><i/></div>}</div>
@@ -304,7 +318,7 @@ export default function Home() {
           <p className="eyebrow">PLAYBACK SPEED</p>
           <div className="speed-row">{[.5,1,1.5,2].map(s=><button className={speed===s?"selected":""} key={s} onClick={()=>{setSpeed(s);if(videoRef.current)videoRef.current.playbackRate=s}}>{s}×</button>)}</div>
           <div className="tip"><span>⌁</span><div><b>Non-destructive editing</b><p>Your original video is never changed. Experiment freely.</p></div></div>
-          </div>}
+          </div>}</>}
         </aside>
       </section>
       {notice && <div className="toast" role="status">{notice}<button onClick={()=>setNotice("")}>×</button></div>}

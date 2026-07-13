@@ -212,7 +212,7 @@ export default function Home() {
     setSaving(true);
     try { const id=projectId||crypto.randomUUID();if(!projectId)setProjectId(id);await putProject({id,name:fileName,fileName:sourceFile.name,video:sourceFile,duration,thumbnail:thumbnails[0],editState:{trimStart,trimEnd,filter,speed,muted,crop,rotation},updatedAt:new Date().toISOString()});setNotice("Project saved to your dashboard."); } catch { setNotice("Couldn’t save on this device."); } finally {setSaving(false);}
   };
-  useEffect(()=>{if(!sourceFile||!duration)return;const timer=window.setTimeout(()=>{const id=projectId||crypto.randomUUID();if(!projectId)setProjectId(id);putProject({id,name:fileName,fileName:sourceFile.name,video:sourceFile,duration,thumbnail:thumbnails[0],editState:{trimStart,trimEnd,filter,speed,muted,crop,rotation},updatedAt:new Date().toISOString()}).catch(()=>{})},900);return()=>clearTimeout(timer)},[sourceFile,duration,fileName,trimStart,trimEnd,filter,speed,muted,crop,rotation,thumbnails,projectId]);
+  useEffect(()=>{if(!sourceFile||!duration)return;const timer=window.setTimeout(()=>{const id=projectId||crypto.randomUUID();if(!projectId)setProjectId(id);putProject({id,name:fileName,fileName:sourceFile.name,video:sourceFile,duration,thumbnail:thumbnails[0],editState:{trimStart,trimEnd,filter,speed,muted,crop,rotation},updatedAt:new Date().toISOString()}).catch(()=>{})},200);return()=>clearTimeout(timer)},[sourceFile,duration,fileName,trimStart,trimEnd,filter,speed,muted,crop,rotation,thumbnails,projectId]);
 
   if (!started) return (
     <main className="landing">

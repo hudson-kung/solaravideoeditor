@@ -6,10 +6,10 @@ const geist = Geist({ variable: "--font-sans", subsets: ["latin"] });
 const mono = Geist_Mono({ variable: "--font-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Solara — AI Video Editor",
-  description: "A fast, private video editor for trimming, cropping, effects, and export.",
+  title: "Solara — The World’s Best Video Editor",
+  description: "Create brilliant videos with powerful editing tools and Solara AI.",
   openGraph: {
-    title: "Solara — Your vision, edited in seconds.",
+    title: "Solara — The World’s Best Video Editor",
     description: "A fast, private video editor for trimming, cropping, effects, and export.",
     images: [{ url: "/og.png", width: 1730, height: 909, alt: "Solara AI video editor" }],
   },

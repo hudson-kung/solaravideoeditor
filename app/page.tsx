@@ -221,9 +221,9 @@ export default function Home() {
       <section className="hero">
         <div className="sun-glow one"/><div className="sun-glow two"/>
         <div className="hero-copy">
-          <div className="hero-tag"><i/> AI-POWERED VIDEO EDITOR</div>
-          <h1>Solara, the world’s first <em>AI-powered video editor.</em></h1>
-          <p>Turn raw clips into polished stories with an editor that understands what you want. Describe the result, and Solara cuts, colors, captions, and transforms your video in seconds.</p>
+          <div className="hero-tag"><i/> THE FUTURE OF VIDEO CREATION</div>
+          <h1><span>Solara.</span><br/><em>The world’s best<br/>video editor.</em></h1>
+          <div className="hero-promise"><span><b>✦</b> Edit with AI</span><span><b>✂</b> Create with precision</span><span><b>↗</b> Share anywhere</span></div>
           <div className="hero-actions"><button onClick={beginEditing}>Get started — it’s free <span>→</span></button><a href="#how"><b>▶</b> See how it works</a></div>
           <div className="trust"><span>✓ No credit card</span><span>✓ Videos stay private</span><span>✓ Export in HD</span></div>
         </div>
@@ -240,7 +240,7 @@ export default function Home() {
       <section className="feature-grid-section"><div className="section-heading"><p className="section-label">BUILT FOR THE WAY YOU CREATE</p><h2>Big editor energy.<br/>Zero learning curve.</h2><span>Everything you expect from a professional editor, designed to feel effortless from the first click.</span></div><div className="homepage-features"><article className="wide"><div><span>✂</span><h3>A timeline you already understand</h3><p>See every moment, drag through real video frames, trim precisely, and keep complete control.</p></div><div className="mini-timeline"><i/><i/><i/><i/><b/></div></article><article><span>◐</span><h3>Looks that feel cinematic</h3><p>Rich filters, color controls, crop, rotation, and speed—all adjustable.</p><div className="swatches"><i/><i/><i/><i/></div></article><article><span>☁</span><h3>Your projects, organized</h3><p>A personal dashboard keeps every story ready when inspiration strikes.</p><div className="project-stack"><i/><i/><i/></div></article><article><span>☀</span><h3>Light or dark. Your call.</h3><p>Switch your entire creative workspace to match the way you work.</p><div className="mode-pill"><i/> Light <b>Dark</b></div></article></div></section>
       <section className="how-section" id="how"><div className="section-heading"><p className="section-label">HOW IT WORKS</p><h2>From raw clip to ready<br/>to share in three steps.</h2></div><div className="steps"><article><b>01</b><span>↑</span><h3>Upload your video</h3><p>Bring in a clip from any device. It stays private while you edit.</p></article><article><b>02</b><span>✦</span><h3>Tell Solara your vision</h3><p>Ask AI to trim, style, caption, rotate, mute, or speed up your story.</p></article><article><b>03</b><span>↗</span><h3>Export and share</h3><p>Download your finished video and publish it anywhere.</p></article></div></section>
       <section className="final-cta"><div><span>✦</span><p>YOUR NEXT STORY STARTS HERE</p><h2>Make something<br/>brilliant today.</h2><button onClick={beginEditing}>Get started for free <b>→</b></button><small>No credit card required · Your videos stay private</small></div></section>
-      <footer className="landing-footer"><a className="solara-logo" href="#"><span>✦</span>SOLARA</a><p>The world’s first AI-powered video editor.</p><div><a href="#features">Features</a><a href="#ai">AI Editor</a><a href="#how">How it works</a></div></footer>
+      <footer className="landing-footer"><a className="solara-logo" href="#"><span>✦</span>SOLARA</a><p>The world’s best video editor.</p><div><a href="#features">Features</a><a href="#ai">AI Editor</a><a href="#how">How it works</a></div></footer>
     </main>
   );
 

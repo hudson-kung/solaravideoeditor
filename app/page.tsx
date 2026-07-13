@@ -57,9 +57,10 @@ export default function Home() {
 
   const activeFilter = useMemo(() => filters.find((f) => f.name === filter)!, [filter]);
   const timelineWidth = duration ? Math.max(0, ((trimEnd - trimStart) / duration) * 100) : 100;
+  const beginEditing = () => { if(localStorage.getItem("solara-profile"))setStarted(true); else location.href="/signin?returnTo=/?editor=1"; };
 
   useEffect(() => () => { if (src) URL.revokeObjectURL(src); }, [src]);
-  useEffect(() => { if (new URLSearchParams(window.location.search).get("editor") === "1") setStarted(true); }, []);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("editor") === "1") { if(localStorage.getItem("solara-profile"))setStarted(true); else location.href="/signin?returnTo=/?editor=1"; } }, []);
   useEffect(() => { const saved=localStorage.getItem("solara-theme"); if(saved==="dark"||saved==="light")setEditorTheme(saved); }, []);
 
   const loadFile = (file?: File) => {
@@ -215,7 +216,7 @@ export default function Home() {
       <nav className="landing-nav">
         <a className="solara-logo" href="#"><span>✦</span>SOLARA</a>
         <div className="nav-links"><a href="#features">Features</a><a href="#ai">AI Editor</a><a href="#how">How it works</a></div>
-        <div className="nav-account"><a href="/signin?returnTo=/dashboard">Sign in</a><button className="nav-cta" onClick={()=>setStarted(true)}>Start creating <span>↗</span></button></div>
+        <div className="nav-account"><a href="/signin?returnTo=/dashboard">Sign in</a><button className="nav-cta" onClick={beginEditing}>Start creating <span>↗</span></button></div>
       </nav>
       <section className="hero">
         <div className="sun-glow one"/><div className="sun-glow two"/>
@@ -223,7 +224,7 @@ export default function Home() {
           <div className="hero-tag"><i/> AI-POWERED VIDEO EDITOR</div>
           <h1>Your vision.<br/><em>Edited in seconds.</em></h1>
           <p>Turn raw clips into polished stories with an editor that understands what you want. Just describe it, and Solara makes it happen.</p>
-          <div className="hero-actions"><button onClick={()=>setStarted(true)}>Get started — it’s free <span>→</span></button><a href="#how"><b>▶</b> See how it works</a></div>
+          <div className="hero-actions"><button onClick={beginEditing}>Get started — it’s free <span>→</span></button><a href="#how"><b>▶</b> See how it works</a></div>
           <div className="trust"><span>✓ No credit card</span><span>✓ Videos stay private</span><span>✓ Export in HD</span></div>
         </div>
         <div className="hero-demo" aria-label="Solara editor preview">
@@ -241,7 +242,7 @@ export default function Home() {
   return (
     <main className={`studio editor-${editorTheme}`}>
       <header className="topbar">
-        <div className="brand"><span className="brand-mark">✦</span><span>SOLARA</span><b>AI EDITOR</b></div>
+        <a className="brand" href="/dashboard"><span className="brand-mark">✦</span><span>SOLARA</span><b>AI EDITOR</b></a>
         <div className="project-title"><span className="status-dot" />{fileName}<span className="saved">Saved locally</span></div>
         <div className="top-actions"><a className="account-link" href="/dashboard">▦ Dashboard</a><button className="save-btn" onClick={saveProject} disabled={saving||!src}>{saving?"Saving…":"Save"}</button><button className="export" onClick={exportVideo} disabled={exporting || !src}>{exporting ? "Rendering…" : "Export"}<span>↗</span></button></div>
       </header>

@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from "react";
+import { getProject, putProject } from "./lib/project-store";
 
 type FilterName = "Clean" | "Cinema" | "Mono" | "Warm" | "Cool" | "Fade";
 type ChatMessage = { role: "ai" | "user"; text: string };
@@ -54,6 +55,7 @@ export default function Home() {
   const [sticker, setSticker] = useState("");
   const [captions, setCaptions] = useState(false);
   const [editorTheme, setEditorTheme] = useState<"light"|"dark">("light");
+  const [projectId, setProjectId] = useState("");
 
   const activeFilter = useMemo(() => filters.find((f) => f.name === filter)!, [filter]);
   const timelineWidth = duration ? Math.max(0, ((trimEnd - trimStart) / duration) * 100) : 100;
@@ -62,6 +64,7 @@ export default function Home() {
   useEffect(() => () => { if (src) URL.revokeObjectURL(src); }, [src]);
   useEffect(() => { if (new URLSearchParams(window.location.search).get("editor") === "1") { if(localStorage.getItem("solara-profile"))setStarted(true); else location.href="/signin?returnTo=/?editor=1"; } }, []);
   useEffect(() => { const saved=localStorage.getItem("solara-theme"); if(saved==="dark"||saved==="light")setEditorTheme(saved); }, []);
+  useEffect(()=>{const id=new URLSearchParams(location.search).get("project");if(!id)return;getProject(id).then(project=>{if(!project)return;const file=new File([project.video],project.fileName,{type:project.video.type});setProjectId(project.id);setSourceFile(file);setSrc(URL.createObjectURL(file));setFileName(project.name);const e=project.editState;setFilter((e.filter as FilterName)||"Clean");setSpeed(Number(e.speed)||1);setMuted(Boolean(e.muted));setCrop(Number(e.crop)||100);setRotation(Number(e.rotation)||0);setTrimStart(Number(e.trimStart)||0);setTrimEnd(Number(e.trimEnd)||project.duration);setStarted(true)})},[]);
 
   const loadFile = (file?: File) => {
     if (!file || !file.type.startsWith("video/")) {
@@ -207,9 +210,9 @@ export default function Home() {
   const saveProject = async () => {
     if (!sourceFile) { setNotice("Upload a video before saving your project."); return; }
     setSaving(true);
-    const form = new FormData(); form.set("video",sourceFile); form.set("name",fileName); form.set("duration",String(duration)); form.set("editState",JSON.stringify({trimStart,trimEnd,filter,speed,muted,crop,rotation}));
-    try { const response=await fetch("/api/projects",{method:"POST",body:form}); if(response.status===401){setNotice("Sign in to save videos to your Solara account.");} else if(!response.ok){setNotice("Couldn’t save this project yet.");} else {setNotice("Project saved to your Solara library.");} } catch { setNotice("Couldn’t reach project storage."); } finally {setSaving(false);}
+    try { const id=projectId||crypto.randomUUID();if(!projectId)setProjectId(id);await putProject({id,name:fileName,fileName:sourceFile.name,video:sourceFile,duration,thumbnail:thumbnails[0],editState:{trimStart,trimEnd,filter,speed,muted,crop,rotation},updatedAt:new Date().toISOString()});setNotice("Project saved to your dashboard."); } catch { setNotice("Couldn’t save on this device."); } finally {setSaving(false);}
   };
+  useEffect(()=>{if(!sourceFile||!duration)return;const timer=window.setTimeout(()=>{const id=projectId||crypto.randomUUID();if(!projectId)setProjectId(id);putProject({id,name:fileName,fileName:sourceFile.name,video:sourceFile,duration,thumbnail:thumbnails[0],editState:{trimStart,trimEnd,filter,speed,muted,crop,rotation},updatedAt:new Date().toISOString()}).catch(()=>{})},900);return()=>clearTimeout(timer)},[sourceFile,duration,fileName,trimStart,trimEnd,filter,speed,muted,crop,rotation,thumbnails,projectId]);
 
   if (!started) return (
     <main className="landing">
@@ -248,7 +251,7 @@ export default function Home() {
     <main className={`studio editor-${editorTheme}`}>
       <header className="topbar">
         <a className="brand" href="/dashboard"><span className="brand-mark">✦</span><span>SOLARA</span><b>AI EDITOR</b></a>
-        <div className="project-title"><span className="status-dot" />{fileName}<span className="saved">Saved locally</span></div>
+        <div className="project-title"><span className="status-dot" />{fileName}<span className="saved">Autosaved</span></div>
         <div className="top-actions"><a className="account-link" href="/dashboard">▦ Dashboard</a><button className="save-btn" onClick={saveProject} disabled={saving||!src}>{saving?"Saving…":"Save"}</button><button className="export" onClick={exportVideo} disabled={exporting || !src}>{exporting ? "Rendering…" : "Export"}<span>↗</span></button></div>
       </header>
 
@@ -270,7 +273,7 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="video-shell" style={{width: `${crop}%`, transform: `rotate(${rotation}deg)`}}>
-                  <video ref={videoRef} src={src} style={{filter: activeFilter.css}} muted={muted} onLoadedMetadata={(e) => { const d=e.currentTarget.duration; setDuration(d); setTrimStart(0); setTrimEnd(d); makeThumbnails(src,d); }} onTimeUpdate={(e) => { const t=e.currentTarget.currentTime; setCurrent(t); if (t >= trimEnd) {e.currentTarget.pause(); setPlaying(false)} }} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+                  <video ref={videoRef} src={src} style={{filter: activeFilter.css}} muted={muted} onLoadedMetadata={(e) => { const d=e.currentTarget.duration; setDuration(d); if(!projectId){setTrimStart(0);setTrimEnd(d)} makeThumbnails(src,d); }} onTimeUpdate={(e) => { const t=e.currentTarget.currentTime; setCurrent(t); if (t >= trimEnd) {e.currentTarget.pause(); setPlaying(false)} }} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
                   {overlayText&&<div className="video-text-overlay">{overlayText}</div>}{sticker&&<div className="video-sticker">{sticker}</div>}{captions&&<div className="video-caption">This is your auto-caption preview</div>}
                 </div>
               )}

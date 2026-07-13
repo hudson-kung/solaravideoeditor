@@ -25,7 +25,9 @@ const formatTime = (seconds: number) => {
 export default function Home() {
   const [started, setStarted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const musicInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const musicRef = useRef<HTMLAudioElement>(null);
   const [src, setSrc] = useState("");
   const [fileName, setFileName] = useState("Untitled project");
   const [duration, setDuration] = useState(0);
@@ -59,12 +61,15 @@ export default function Home() {
   const [cuts, setCuts] = useState<number[]>([]);
   const [cutHistory, setCutHistory] = useState<number[][]>([]);
   const [redoCuts, setRedoCuts] = useState<number[][]>([]);
+  const [musicSrc, setMusicSrc] = useState("");
+  const [musicName, setMusicName] = useState("");
 
   const activeFilter = useMemo(() => filters.find((f) => f.name === filter)!, [filter]);
   const timelineWidth = duration ? Math.max(0, ((trimEnd - trimStart) / duration) * 100) : 100;
   const beginEditing = () => { if(localStorage.getItem("solara-profile"))setStarted(true); else location.href="/signin?returnTo=/?editor=1"; };
 
   useEffect(() => () => { if (src) URL.revokeObjectURL(src); }, [src]);
+  useEffect(() => () => { if (musicSrc) URL.revokeObjectURL(musicSrc); }, [musicSrc]);
   useEffect(() => { if (new URLSearchParams(window.location.search).get("editor") === "1") { if(localStorage.getItem("solara-profile"))setStarted(true); else location.href="/signin?returnTo=/?editor=1"; } }, []);
   useEffect(() => { const saved=localStorage.getItem("solara-theme"); if(saved==="dark"||saved==="light")setEditorTheme(saved); }, []);
   useEffect(()=>{const id=new URLSearchParams(location.search).get("project");if(!id)return;getProject(id).then(project=>{if(!project)return;const file=new File([project.video],project.fileName,{type:project.video.type});setProjectId(project.id);setSourceFile(file);setSrc(URL.createObjectURL(file));setFileName(project.name);const e=project.editState;setFilter((e.filter as FilterName)||"Clean");setSpeed(Number(e.speed)||1);setMuted(Boolean(e.muted));setCrop(Number(e.crop)||100);setRotation(Number(e.rotation)||0);setTrimStart(Number(e.trimStart)||0);setTrimEnd(Number(e.trimEnd)||project.duration);setCuts(Array.isArray(e.cuts)?e.cuts as number[]:[]);setStarted(true)})},[]);
@@ -108,12 +113,13 @@ export default function Home() {
     setDragging(false);
     loadFile(e.dataTransfer.files[0]);
   };
+  const loadMusic = (file?:File) => {if(!file||!file.type.startsWith("audio/")){setNotice("Choose an audio file.");return}if(musicSrc)URL.revokeObjectURL(musicSrc);setMusicSrc(URL.createObjectURL(file));setMusicName(file.name);setNotice("Music added to this project.")};
 
   const togglePlay = () => {
     const v = videoRef.current;
     if (!v) return;
     if (v.currentTime >= trimEnd - .05) v.currentTime = trimStart;
-    if (v.paused) v.play(); else v.pause();
+    if (v.paused) {v.play();if(musicRef.current){musicRef.current.currentTime=Math.max(0,v.currentTime-trimStart);musicRef.current.play()}} else {v.pause();musicRef.current?.pause()}
   };
 
   const addCut = () => {
@@ -148,6 +154,8 @@ export default function Home() {
     const stream = canvas.captureStream(30);
     const capture = (v as HTMLVideoElement & { captureStream?: () => MediaStream }).captureStream?.();
     if (capture && !muted) capture.getAudioTracks().forEach((track) => stream.addTrack(track));
+    const musicCapture=(musicRef.current as (HTMLAudioElement & {captureStream?:()=>MediaStream})|null)?.captureStream?.();
+    if(musicCapture)musicCapture.getAudioTracks().forEach(track=>stream.addTrack(track));
     const recorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm" });
     const chunks: Blob[] = [];
     recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -287,11 +295,12 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="video-shell" style={{width: `${crop}%`, transform: `rotate(${rotation}deg)`}}>
-                  <video ref={videoRef} src={src} style={{filter: activeFilter.css}} muted={muted} onLoadedMetadata={(e) => { const d=e.currentTarget.duration; setDuration(d); if(!projectId){setTrimStart(0);setTrimEnd(d)} makeThumbnails(src,d); }} onTimeUpdate={(e) => { const t=e.currentTarget.currentTime; setCurrent(t); if (t >= trimEnd) {e.currentTarget.pause(); setPlaying(false)} }} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+                  <video ref={videoRef} src={src} style={{filter: activeFilter.css}} muted={muted} onLoadedMetadata={(e) => { const d=e.currentTarget.duration; setDuration(d); if(!projectId){setTrimStart(0);setTrimEnd(d)} makeThumbnails(src,d); }} onTimeUpdate={(e) => { const t=e.currentTarget.currentTime; setCurrent(t); if (t >= trimEnd) {e.currentTarget.pause();musicRef.current?.pause();setPlaying(false)} }} onPlay={() => setPlaying(true)} onPause={() => {setPlaying(false);musicRef.current?.pause()}} />
                   {overlayText&&<div className="video-text-overlay">{overlayText}</div>}{sticker&&<div className="video-sticker">{sticker}</div>}{captions&&<div className="video-caption">This is your auto-caption preview</div>}
                 </div>
               )}
               <input ref={inputRef} type="file" accept="video/*" hidden onChange={(e: ChangeEvent<HTMLInputElement>) => loadFile(e.target.files?.[0])} />
+              <input ref={musicInputRef} type="file" accept="audio/*" hidden onChange={(e: ChangeEvent<HTMLInputElement>) => loadMusic(e.target.files?.[0])}/><audio ref={musicRef} src={musicSrc} loop/>
             </div>
             <div className="transport">
               <button onClick={() => seek(trimStart)} aria-label="Go to start">◀</button><button className="play" onClick={togglePlay} disabled={!src}>{playing ? "Ⅱ" : "▶"}</button><button onClick={() => seek(trimEnd)} aria-label="Go to end">▶</button>
@@ -319,7 +328,7 @@ export default function Home() {
           {!["Effects","Filters","Adjust","AI editor"].includes(activeTool) ? <div className="tool-panel">
             <div className="tool-panel-head"><div><span>{activeTool==="Media"?"▣":activeTool==="Audio"?"♫":activeTool==="Text"?"T":activeTool==="Stickers"?"★":activeTool==="Transitions"?"↝":activeTool==="Captions"?"CC":"▤"}</span><strong>{activeTool}</strong></div></div>
             {activeTool==="Media"&&<><button className="primary-tool-action" onClick={()=>inputRef.current?.click()}>＋ Import media</button><div className="media-library">{src?<div className="media-card"><div className="media-thumb">{thumbnails[0]?<img src={thumbnails[0]} alt="Video thumbnail"/>:<span>▶</span>}</div><b>{fileName}</b><small>{formatTime(duration)}</small></div>:<p>Your imported videos will appear here.</p>}</div></>}
-            {activeTool==="Audio"&&<><p className="tool-help">Control the original clip audio.</p><button className="setting-row" onClick={()=>setMuted(!muted)}><span>{muted?"Unmute original audio":"Mute original audio"}</span><b>{muted?"OFF":"ON"}</b></button><div className="asset-grid"><button onClick={()=>setNotice("Music library coming next.")}>♫ Music</button><button onClick={()=>setNotice("Sound effects library coming next.")}>◉ Sound effects</button></div></>}
+            {activeTool==="Audio"&&<><p className="tool-help">Control clip sound or add your own music.</p><button className="setting-row" onClick={()=>setMuted(!muted)}><span>{muted?"Unmute clip":"Mute clip audio"}</span><b>{muted?"MUTED":"ON"}</b></button><button className="primary-tool-action music-upload" onClick={()=>musicInputRef.current?.click()}>♫ Upload music</button>{musicSrc?<div className="music-track"><span>♫</span><div><b>{musicName}</b><small>Plays with your video</small></div><button onClick={()=>{musicRef.current?.pause();URL.revokeObjectURL(musicSrc);setMusicSrc("");setMusicName("")}}>×</button></div>:<div className="audio-drop">MP3, WAV, M4A, OGG</div>}</>}
             {activeTool==="Text"&&<><p className="tool-help">Add a title directly over your video.</p><input className="tool-input" value={overlayText} onChange={e=>setOverlayText(e.target.value)} placeholder="Type your title…"/><div className="text-styles"><button onClick={()=>setOverlayText("YOUR STORY")}>BOLD</button><button onClick={()=>setOverlayText("A moment to remember")}>Elegant</button><button onClick={()=>setOverlayText("")}>Clear</button></div></>}
             {activeTool==="Stickers"&&<><p className="tool-help">Choose a sticker for the preview.</p><div className="sticker-grid">{["🔥","✨","❤️","😂","⭐","☀️","🎬","🚀","💯"].map(s=><button key={s} onClick={()=>setSticker(sticker===s?"":s)}>{s}</button>)}</div></>}
             {activeTool==="Transitions"&&<><p className="tool-help">Pick a transition style for your next split.</p><div className="transition-list">{["Dissolve","Fade to black","Slide left","Zoom","Flash"].map(t=><button key={t} onClick={()=>setNotice(`${t} transition selected. Add another clip to use it.`)}><i/>{t}<span>＋</span></button>)}</div></>}

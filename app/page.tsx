@@ -266,7 +266,7 @@ export default function Home() {
       <header className="topbar">
         <a className="brand" href="/dashboard"><span className="brand-mark">✦</span><span>SOLARA</span><b>AI EDITOR</b></a>
         <div className="project-title"><span className="status-dot" />{fileName}<span className="saved">Autosaved</span></div>
-        <div className="top-actions"><button className="icon-btn" onClick={undoCut} disabled={!cutHistory.length} aria-label="Undo cut" title="Undo cut">↶</button><button className="icon-btn" onClick={redoCut} disabled={!redoCuts.length} aria-label="Redo cut" title="Redo cut">↷</button><a className="account-link" href="/dashboard">▦ Dashboard</a><button className="save-btn" onClick={saveProject} disabled={saving||!src}>{saving?"Saving…":"Save"}</button><button className="export" onClick={exportVideo} disabled={exporting || !src}>{exporting ? "Rendering…" : "Export"}<span>↗</span></button></div>
+        <div className="top-actions"><a className="account-link" href="/dashboard">▦ Dashboard</a><button className="save-btn" onClick={saveProject} disabled={saving||!src}>{saving?"Saving…":"Save"}</button><button className="export" onClick={exportVideo} disabled={exporting || !src}>{exporting ? "Rendering…" : "Export"}<span>↗</span></button></div>
       </header>
 
       <section className="workspace">
@@ -301,7 +301,7 @@ export default function Home() {
           </div>
 
           <div className="timeline-card">
-            <div className="timeline-head"><strong>Timeline <small>{cuts.length?`${cuts.length+1} clips`:"1 clip"}</small></strong><div><button className="split-btn" onClick={addCut} disabled={!src}>✂ Split at playhead</button><button onClick={() => setSpeed(speed === 2 ? .5 : speed + .5)}>{speed}×</button><button onClick={() => {setTrimStart(0);setTrimEnd(duration)}}>Reset trim</button></div></div>
+            <div className="timeline-head"><strong>Timeline <small>{cuts.length?`${cuts.length+1} clips`:"1 clip"}</small></strong><div className="timeline-actions"><button className="history-btn" onClick={undoCut} disabled={!cutHistory.length} aria-label="Undo cut" title="Undo cut">↶</button><button className="history-btn" onClick={redoCut} disabled={!redoCuts.length} aria-label="Redo cut" title="Redo cut">↷</button><button className="split-btn" onClick={addCut} disabled={!src} aria-label="Split at playhead" title="Split at playhead">][</button><button onClick={() => setSpeed(speed === 2 ? .5 : speed + .5)}>{speed}×</button><button onClick={() => {setTrimStart(0);setTrimEnd(duration)}}>Reset trim</button></div></div>
             <div className="clip-meta"><span>{src ? fileName : "No clip loaded"}</span><b>{formatTime(current)} / {formatTime(duration)}</b></div>
             <div className="ruler">{Array.from({length:7},(_,i)=><span key={i}>{formatTime(duration*(i/6))}</span>)}</div>
             <div className="track">

@@ -1,0 +1,45 @@
+/* One geometric logo mark across every Solara surface. */
+:where(.solara-logo > span, .signin-logo > span, .dash-logo > span, .thumb-top > a > span, .brand-mark) {
+  position: relative;
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 30px !important;
+  width: 30px !important;
+  height: 30px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+  border-radius: 8px !important;
+  background: #ff6719 !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  transform: none !important;
+  box-shadow: 0 5px 14px #ff671933;
+}
+
+:where(.solara-logo > span, .signin-logo > span, .dash-logo > span, .thumb-top > a > span, .brand-mark)::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  background: #fff;
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+}
+
+.brand-mark .ui-svg-icon {
+  display: none;
+}
+
+.solara-logo,
+.signin-logo,
+.dash-logo,
+.thumb-top > a,
+.brand {
+  align-items: center !important;
+}
+
+@media (max-width: 760px) {
+  .dash-logo {
+    justify-content: center;
+  }
+}

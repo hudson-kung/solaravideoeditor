@@ -1,4 +1,18 @@
-export type SolaraAccount={name:string;email:string;passwordHash:string;createdAt:string};
+export type SolaraAccount={
+  name:string;
+  username?:string;
+  email:string;
+  passwordHash:string;
+  createdAt:string;
+};
+
+export function normalizeUsername(value:string){
+  return value.trim().toLowerCase().replace(/[^a-z0-9_]/g,"");
+}
+
+export function accountUsername(account:SolaraAccount){
+  return normalizeUsername(account.username||account.name||account.email.split("@")[0]);
+}
 
 export async function hashPassword(password:string){
   const bytes=new TextEncoder().encode(password);

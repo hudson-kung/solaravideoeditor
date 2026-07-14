@@ -110,6 +110,7 @@ export default function Home() {
   const [editorTheme, setEditorTheme] = useState<"light"|"dark">("light");
   const [projectId, setProjectId] = useState("");
   const [cuts, setCuts] = useState<number[]>([]);
+  const [selectedCut, setSelectedCut] = useState<number|null>(null);
   const [cutHistory, setCutHistory] = useState<number[][]>([]);
   const [redoCuts, setRedoCuts] = useState<number[][]>([]);
   const [musicSrc, setMusicSrc] = useState("");
@@ -138,7 +139,7 @@ export default function Home() {
     setNotice("");
     setPlaying(false);
     setThumbnails([]);
-    setCuts([]);setCutHistory([]);setRedoCuts([]);
+    setCuts([]);setSelectedCut(null);setCutHistory([]);setRedoCuts([]);
   };
 
   const makeThumbnails = async (videoSrc: string, videoDuration: number) => {
@@ -178,10 +179,35 @@ export default function Home() {
     if(!src){setNotice("Upload a video before adding a cut.");return}
     if(current<=trimStart+.05||current>=trimEnd-.05){setNotice("Move the playhead inside the clip to split it.");return}
     if(cuts.some(c=>Math.abs(c-current)<.08)){setNotice("There’s already a cut here.");return}
-    setCutHistory(h=>[...h,cuts]);setRedoCuts([]);setCuts([...cuts,current].sort((a,b)=>a-b));setNotice(`Split added at ${formatTime(current)}.`);
+    setCutHistory(h=>[...h,cuts]);setRedoCuts([]);setCuts([...cuts,current].sort((a,b)=>a-b));setSelectedCut(current);setSelectedOverlay(null);setNotice(`Cut added at ${formatTime(current)}.`);
   };
-  const undoCut = () => {if(!cutHistory.length)return;const previous=cutHistory[cutHistory.length-1];setRedoCuts(r=>[cuts,...r]);setCuts(previous);setCutHistory(h=>h.slice(0,-1));};
-  const redoCut = () => {if(!redoCuts.length)return;const next=redoCuts[0];setCutHistory(h=>[...h,cuts]);setCuts(next);setRedoCuts(r=>r.slice(1));};
+  const undoCut = () => {if(!cutHistory.length)return;const previous=cutHistory[cutHistory.length-1];setRedoCuts(r=>[cuts,...r]);setCuts(previous);setSelectedCut(null);setCutHistory(h=>h.slice(0,-1));};
+  const redoCut = () => {if(!redoCuts.length)return;const next=redoCuts[0];setCutHistory(h=>[...h,cuts]);setCuts(next);setSelectedCut(null);setRedoCuts(r=>r.slice(1));};
+  const deleteSelected=()=>{
+    if(selectedCut!==null){
+      setCutHistory(h=>[...h,cuts]);
+      setRedoCuts([]);
+      setCuts(currentCuts=>currentCuts.filter(c=>c!==selectedCut));
+      setSelectedCut(null);
+      setNotice("Cut removed.");
+      return;
+    }
+    if(selectedOverlay==="text"){setOverlayText("");setSelectedOverlay(null);setNotice("Text removed.");return}
+    if(selectedOverlay==="captions"){setCaptions(false);setSelectedOverlay(null);setNotice("Captions removed.");return}
+    if(selectedOverlay==="effect"){setFilter("Clean");setSelectedOverlay(null);setNotice("Effect removed.")}
+  };
+  useEffect(()=>{
+    const onKeyDown=(event:KeyboardEvent)=>{
+      if(event.key!=="Backspace"&&event.key!=="Delete")return;
+      const target=event.target as HTMLElement|null;
+      if(target?.matches("input, textarea, select")||target?.isContentEditable)return;
+      if(selectedCut===null&&!selectedOverlay)return;
+      event.preventDefault();
+      deleteSelected();
+    };
+    window.addEventListener("keydown",onKeyDown);
+    return()=>window.removeEventListener("keydown",onKeyDown);
+  },[selectedCut,selectedOverlay,cuts]);
 
   const seek = (value: number) => {
     const v = videoRef.current;
@@ -191,7 +217,7 @@ export default function Home() {
   };
 
   const startOverlayDrag=(e:ReactPointerEvent<HTMLElement>,kind:"text"|"captions",mode:"move"|"resize")=>{
-    e.stopPropagation();setSelectedOverlay(kind);setActiveTool(kind==="text"?"Text":"Captions");
+    e.stopPropagation();setSelectedCut(null);setSelectedOverlay(kind);setActiveTool(kind==="text"?"Text":"Captions");
     overlayDragRef.current={kind,mode,startX:e.clientX,startY:e.clientY,start:kind==="text"?{...textBox}:{...captionBox}};
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -373,7 +399,7 @@ export default function Home() {
               ) : (
                 <div ref={videoShellRef} className={`video-shell fx-${activeFilter.effect||"none"}`} style={{width: `${crop}%`, transform: `rotate(${rotation}deg)`}} onPointerMove={moveOverlay} onPointerUp={endOverlayDrag} onPointerCancel={endOverlayDrag} onPointerDown={e=>{if(!(e.target as HTMLElement).closest(".movable-overlay,.screen-effect"))setSelectedOverlay(null)}}>
                   <video ref={videoRef} src={src} style={{filter: activeFilter.css}} muted={muted} onLoadedMetadata={(e) => { const d=e.currentTarget.duration; setDuration(d); if(!projectId){setTrimStart(0);setTrimEnd(d)} makeThumbnails(src,d); }} onTimeUpdate={(e) => { const t=e.currentTarget.currentTime; setCurrent(t); if (t >= trimEnd) {e.currentTarget.pause();musicRef.current?.pause();setPlaying(false)} }} onPlay={() => setPlaying(true)} onPause={() => {setPlaying(false);musicRef.current?.pause()}} />
-                  {filter!=="Clean"&&<div className={`screen-effect screen-${activeFilter.effect||"filter"} ${selectedOverlay==="effect"?"selected":""}`} onPointerDown={e=>{e.stopPropagation();setSelectedOverlay("effect");setActiveTool("Effects");setPanel("adjust")}}/>}
+                  {filter!=="Clean"&&<div className={`screen-effect screen-${activeFilter.effect||"filter"} ${selectedOverlay==="effect"?"selected":""}`} onPointerDown={e=>{e.stopPropagation();setSelectedCut(null);setSelectedOverlay("effect");setActiveTool("Effects");setPanel("adjust")}}/>}
                   {overlayText&&<div className={`video-text-overlay movable-overlay ${selectedOverlay==="text"?"selected":""}`} style={{left:`${textBox.x}%`,top:`${textBox.y}%`,transform:`translate(-50%,-50%) scale(${textBox.scale})`}} onPointerDown={e=>startOverlayDrag(e,"text","move")}><span>{overlayText}</span>{selectedOverlay==="text"&&<button className="overlay-resize-handle" aria-label="Resize text" onPointerDown={e=>startOverlayDrag(e,"text","resize")}/>}</div>}
                   {captions&&<div className={`video-caption movable-overlay ${selectedOverlay==="captions"?"selected":""}`} style={{left:`${captionBox.x}%`,top:`${captionBox.y}%`,bottom:"auto",transform:`translate(-50%,-50%) scale(${captionBox.scale})`}} onPointerDown={e=>startOverlayDrag(e,"captions","move")}><span>This is your auto-caption preview</span>{selectedOverlay==="captions"&&<button className="overlay-resize-handle" aria-label="Resize captions" onPointerDown={e=>startOverlayDrag(e,"captions","resize")}/>}</div>}
                 </div>
@@ -389,18 +415,18 @@ export default function Home() {
           </div>
 
           <div className="timeline-card">
-            <div className="timeline-head"><strong>Timeline <small>{cuts.length?`${cuts.length+1} clips`:"1 clip"}</small></strong><div className="timeline-actions"><button className="history-btn" onClick={undoCut} disabled={!cutHistory.length} aria-label="Undo cut" title="Undo cut"><UiIcon name="undo"/></button><button className="history-btn" onClick={redoCut} disabled={!redoCuts.length} aria-label="Redo cut" title="Redo cut"><UiIcon name="redo"/></button><button className="split-btn" onClick={addCut} disabled={!src} aria-label="Split at playhead" title="Split at playhead"><UiIcon name="scissors"/></button><button onClick={() => setSpeed(speed === 2 ? .5 : speed + .5)}>{speed}×</button><button onClick={() => {setTrimStart(0);setTrimEnd(duration)}}>Reset trim</button></div></div>
+            <div className="timeline-head"><strong>Timeline <small>{cuts.length?`${cuts.length+1} clips`:"1 clip"}</small></strong><div className="timeline-actions"><button className="history-btn" onClick={undoCut} disabled={!cutHistory.length} aria-label="Undo cut" title="Undo cut"><UiIcon name="undo"/></button><button className="history-btn" onClick={redoCut} disabled={!redoCuts.length} aria-label="Redo cut" title="Redo cut"><UiIcon name="redo"/></button><button className="split-btn" onClick={addCut} disabled={!src} aria-label="Split at playhead" title="Split at playhead"><span className="split-symbol">][</span></button><button onClick={() => setSpeed(speed === 2 ? .5 : speed + .5)}>{speed}×</button><button onClick={() => {setTrimStart(0);setTrimEnd(duration)}}>Reset trim</button></div></div>
             <div className="clip-meta"><span>{src ? fileName : "No clip loaded"}</span><b>{formatTime(current)} / {formatTime(duration)}</b></div>
             <div className="ruler">{Array.from({length:7},(_,i)=><span key={i}>{formatTime(duration*(i/6))}</span>)}</div>
             <div className="timeline-stack">
               <div className="overlay-lanes">
-                <button className={`timeline-layer text-layer ${overlayText||captions?"has-content":"empty"} ${selectedOverlay==="text"||selectedOverlay==="captions"?"selected":""}`} style={{left:`${duration?trimStart/duration*100:0}%`,width:`${duration?timelineWidth:100}%`}} onClick={()=>{setActiveTool(overlayText?"Text":captions?"Captions":"Text");setSelectedOverlay(overlayText?"text":captions?"captions":null)}}><UiIcon name="text"/><span>{overlayText||(captions?"Auto captions":"＋ Add text")}</span>{captions&&<b>CC</b>}</button>
-                <button className={`timeline-layer effect-layer ${filter!=="Clean"?"has-content":"empty"} ${selectedOverlay==="effect"?"selected":""}`} style={{left:`${duration?trimStart/duration*100:0}%`,width:`${duration?timelineWidth:100}%`}} onClick={()=>{setActiveTool("Effects");setPanel("adjust");setSelectedOverlay(filter!=="Clean"?"effect":null)}}><UiIcon name="spark"/><span>{filter!=="Clean"?`${filter} effect`:"＋ Add effect"}</span></button>
+                <button className={`timeline-layer text-layer ${overlayText||captions?"has-content":"empty"} ${selectedOverlay==="text"||selectedOverlay==="captions"?"selected":""}`} style={{left:`${duration?trimStart/duration*100:0}%`,width:`${duration?timelineWidth:100}%`}} onClick={()=>{setSelectedCut(null);setActiveTool(overlayText?"Text":captions?"Captions":"Text");setSelectedOverlay(overlayText?"text":captions?"captions":null)}}><UiIcon name="text"/><span>{overlayText||(captions?"Auto captions":"＋ Add text")}</span>{captions&&<b>CC</b>}</button>
+                <button className={`timeline-layer effect-layer ${filter!=="Clean"?"has-content":"empty"} ${selectedOverlay==="effect"?"selected":""}`} style={{left:`${duration?trimStart/duration*100:0}%`,width:`${duration?timelineWidth:100}%`}} onClick={()=>{setSelectedCut(null);setActiveTool("Effects");setPanel("adjust");setSelectedOverlay(filter!=="Clean"?"effect":null)}}><UiIcon name="spark"/><span>{filter!=="Clean"?`${filter} effect`:"＋ Add effect"}</span></button>
               </div>
               <div className="track">
                 <div className="track-fill" style={{left: `${duration ? trimStart/duration*100 : 0}%`, width: `${timelineWidth}%`}} />
                 <div className="filmstrip">{thumbnails.length ? thumbnails.map((thumb,i)=><img key={i} src={thumb} alt="" draggable="false" />) : <div className="empty-strip">{src ? "Generating video preview…" : "Upload a video to build your timeline"}</div>}</div>
-                {cuts.map((cut,i)=><button key={cut} className="cut-marker" style={{left:`${duration?cut/duration*100:0}%`}} onClick={()=>seek(cut)} title={`Cut ${i+1} at ${formatTime(cut)}`}><span><UiIcon name="scissors"/></span></button>)}
+                {cuts.map((cut,i)=><button key={cut} className={`cut-marker ${selectedCut===cut?"selected":""}`} style={{left:`${duration?cut/duration*100:0}%`}} onClick={()=>{setSelectedCut(cut);setSelectedOverlay(null);seek(cut)}} title={`Cut ${i+1} at ${formatTime(cut)} · Backspace to delete`}><span><UiIcon name="scissors"/></span></button>)}
                 <input className="scrubber" type="range" min={0} max={duration || 1} step="0.01" value={current} onChange={(e)=>seek(+e.target.value)} disabled={!src} aria-label="Video playhead" />
               </div>
               <div className="stack-playhead" style={{left:`${duration?current/duration*100:0}%`}}><span/></div>

@@ -1,0 +1,54 @@
+/* Keep interface symbols monochrome. Mobile browsers otherwise replace many
+   Unicode symbols with platform emoji artwork. Stickers remain emoji below. */
+.ui-svg-icon{display:inline-block;width:1em;height:1em;vertical-align:-.12em;overflow:visible;pointer-events:none}
+.brand-mark .ui-svg-icon{width:15px;height:15px}.tool>span .ui-svg-icon{width:20px;height:20px}.upload-icon .ui-svg-icon{width:25px;height:25px}.transport button .ui-svg-icon{width:14px;height:14px}.timeline-actions .ui-svg-icon{width:13px;height:13px}.inspector-tabs .ui-svg-icon{width:12px;height:12px}.ai-orb .ui-svg-icon{width:18px;height:18px}.quick-edits button{display:flex;align-items:center;gap:6px}.quick-edits button .ui-svg-icon{width:12px;height:12px;flex:0 0 12px}.composer>button .ui-svg-icon{width:14px;height:14px}.panel-title .ui-svg-icon,.tool-panel-head .ui-svg-icon{width:13px;height:13px}.primary-tool-action{display:flex;align-items:center;justify-content:center;gap:6px}.primary-tool-action .ui-svg-icon{width:13px;height:13px}.music-track .ui-svg-icon,.media-thumb .ui-svg-icon{width:14px;height:14px}
+:where(button,a){font-variant-emoji:text}
+:where(
+  .solara-logo>span,
+  .brand-mark,
+  .top-actions span,
+  .tool>span,
+  .transport button,
+  .timeline-actions button,
+  .cut-marker>span,
+  .tool-panel-head span,
+  .inspector-tabs span,
+  .ai-orb,
+  .quick-edits button,
+  .panel-title span,
+  .dash-logo>span,
+  .dash-sidebar button>span,
+  .new-project,
+  .dash-search,
+  .empty-icon,
+  .saved-thumb>span,
+  .dash-cards article>span,
+  .signin-logo>span,
+  .signin-spark,
+  .thumb-top>a>span,
+  .thumb-tools>button,
+  .layers-title>button,
+  .layer>span,
+  .layer>button,
+  .layer-buttons>button,
+  .hero-promise b,
+  .hero-actions b,
+  .demo-tools,
+  .mini-logo,
+  .floating-card>span,
+  .proof article>span,
+  .showcase-copy li>span,
+  .showcase-bar>span,
+  .showcase-chat div>span,
+  .homepage-features article>span,
+  .steps article>span,
+  .final-cta>div>span
+){font-family:Arial,Helvetica,sans-serif;font-variant-emoji:text;text-rendering:geometricPrecision}
+
+/* These are content stickers, not interface controls. */
+.sticker-grid button{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-variant-emoji:emoji}
+
+@media(max-width:760px){
+  :where(.tool>span,.thumb-tools>button,.dash-sidebar button>span,.brand-mark,.solara-logo>span,.thumb-top>a>span){font-family:Arial,Helvetica,sans-serif!important;font-variant-emoji:text!important}
+  :where(button,a){font-variant-emoji:text!important}
+}

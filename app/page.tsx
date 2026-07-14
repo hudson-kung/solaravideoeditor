@@ -2,6 +2,7 @@
 
 import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { getProject, putProject } from "./lib/project-store";
+import { UiIcon, UiIconName } from "./ui-icon";
 
 type FilterName = "Clean" | "Cinema" | "Mono" | "Warm" | "Cool" | "Fade";
 type ChatMessage = { role: "ai" | "user"; text: string };
@@ -66,11 +67,11 @@ export default function Home() {
 
   const activeFilter = useMemo(() => filters.find((f) => f.name === filter)!, [filter]);
   const timelineWidth = duration ? Math.max(0, ((trimEnd - trimStart) / duration) * 100) : 100;
-  const beginEditing = () => { if(localStorage.getItem("solara-profile"))setStarted(true); else location.href="/signin?returnTo=/?editor=1"; };
+  const beginEditing = () => { if(localStorage.getItem("solara-profile"))setStarted(true); else location.href="/signup?returnTo=/?editor=1"; };
 
   useEffect(() => () => { if (src) URL.revokeObjectURL(src); }, [src]);
   useEffect(() => () => { if (musicSrc) URL.revokeObjectURL(musicSrc); }, [musicSrc]);
-  useEffect(() => { if (new URLSearchParams(window.location.search).get("editor") === "1") { if(localStorage.getItem("solara-profile"))setStarted(true); else location.href="/signin?returnTo=/?editor=1"; } }, []);
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("editor") === "1") { if(localStorage.getItem("solara-profile"))setStarted(true); else location.href="/signup?returnTo=/?editor=1"; } }, []);
   useEffect(() => { const saved=localStorage.getItem("solara-theme"); if(saved==="dark"||saved==="light")setEditorTheme(saved); }, []);
   useEffect(()=>{const id=new URLSearchParams(location.search).get("project");if(!id)return;getProject(id).then(project=>{if(!project)return;const file=new File([project.video],project.fileName,{type:project.video.type});setProjectId(project.id);setSourceFile(file);setSrc(URL.createObjectURL(file));setFileName(project.name);const e=project.editState;setFilter((e.filter as FilterName)||"Clean");setSpeed(Number(e.speed)||1);setMuted(Boolean(e.muted));setCrop(Number(e.crop)||100);setRotation(Number(e.rotation)||0);setTrimStart(Number(e.trimStart)||0);setTrimEnd(Number(e.trimEnd)||project.duration);setCuts(Array.isArray(e.cuts)?e.cuts as number[]:[]);setStarted(true)})},[]);
 
@@ -241,7 +242,7 @@ export default function Home() {
       <nav className="landing-nav">
         <a className="solara-logo" href="#"><span>✦</span>SOLARA</a>
         <div className="nav-links"><a href="#features">Features</a><a href="#ai">AI Editor</a><a href="#how">How it works</a></div>
-        <div className="nav-account"><a href="/signin?returnTo=/dashboard">Sign in</a><button className="nav-cta" onClick={beginEditing}>Get started <span>↗</span></button></div>
+        <div className="nav-account"><a className="nav-login" href="/signin?returnTo=/dashboard">Log in</a><a className="nav-cta" href="/signup?returnTo=/dashboard">Sign up <span>→</span></a></div>
       </nav>
       <section className="hero">
         <div className="sun-glow one"/><div className="sun-glow two"/>
@@ -272,14 +273,14 @@ export default function Home() {
   return (
     <main className={`studio editor-${editorTheme}`}>
       <header className="topbar">
-        <a className="brand" href="/dashboard"><span className="brand-mark">✦</span><span>SOLARA</span><b>AI EDITOR</b></a>
+        <a className="brand" href="/dashboard"><span className="brand-mark"><UiIcon name="spark"/></span><span>SOLARA</span><b>AI EDITOR</b></a>
         <div className="project-title"><span className="status-dot" />{fileName}<span className="saved">Autosaved</span></div>
         <div className="top-actions"><a className="account-link" href="/dashboard">▦ Dashboard</a><button className="save-btn" onClick={saveProject} disabled={saving||!src}>{saving?"Saving…":"Save"}</button><button className="export" onClick={exportVideo} disabled={exporting || !src}>{exporting ? "Rendering…" : "Export"}<span>↗</span></button></div>
       </header>
 
       <section className="workspace">
         <aside className="toolrail" aria-label="Editor tools">
-          {[['▣','Media'],['♫','Audio'],['T','Text'],['★','Stickers'],['✦','Effects'],['↝','Transitions'],['CC','Captions'],['◐','Filters'],['☷','Adjust'],['▤','Templates'],['AI','AI editor']].map(([icon,label]) => <button key={label} className={activeTool === label ? "tool active" : "tool"} onClick={()=>{setActiveTool(label);if(["Effects","Filters","Adjust"].includes(label))setPanel("adjust");if(label==="AI editor")setPanel("ai")}}><span>{icon}</span>{label}</button>)}
+          {([['media','Media'],['audio','Audio'],['text','Text'],['star','Stickers'],['spark','Effects'],['transition','Transitions'],['captions','Captions'],['filter','Filters'],['adjust','Adjust'],['template','Templates'],['ai','AI editor']] as [UiIconName,string][]).map(([icon,label]) => <button key={label} className={activeTool === label ? "tool active" : "tool"} onClick={()=>{setActiveTool(label);if(["Effects","Filters","Adjust"].includes(label))setPanel("adjust");if(label==="AI editor")setPanel("ai")}}><span><UiIcon name={icon}/></span>{label}</button>)}
         </aside>
 
         <section className="stage-column">
@@ -287,7 +288,7 @@ export default function Home() {
             <div className={`stage ${dragging ? "dragging" : ""}`} onDragOver={(e) => {e.preventDefault(); setDragging(true)}} onDragLeave={() => setDragging(false)} onDrop={onDrop}>
               {!src ? (
                 <div className="upload-state">
-                  <div className="upload-icon">↑</div>
+                  <div className="upload-icon"><UiIcon name="upload"/></div>
                   <h1>Bring your story to life</h1>
                   <p>Drop a video here, or choose one from your device.</p>
                   <button className="choose" onClick={() => inputRef.current?.click()}>Choose video</button>
@@ -300,17 +301,17 @@ export default function Home() {
                 </div>
               )}
               <input ref={inputRef} type="file" accept="video/*" hidden onChange={(e: ChangeEvent<HTMLInputElement>) => loadFile(e.target.files?.[0])} />
-              <input ref={musicInputRef} type="file" accept="audio/*" hidden onChange={(e: ChangeEvent<HTMLInputElement>) => loadMusic(e.target.files?.[0])}/><audio ref={musicRef} src={musicSrc} loop/>
+              <input ref={musicInputRef} type="file" accept="audio/*" hidden onChange={(e: ChangeEvent<HTMLInputElement>) => loadMusic(e.target.files?.[0])}/>{musicSrc&&<audio ref={musicRef} src={musicSrc} loop/>}
             </div>
             <div className="transport">
-              <button onClick={() => seek(trimStart)} aria-label="Go to start">◀</button><button className="play" onClick={togglePlay} disabled={!src}>{playing ? "Ⅱ" : "▶"}</button><button onClick={() => seek(trimEnd)} aria-label="Go to end">▶</button>
+              <button onClick={() => seek(trimStart)} aria-label="Go to start"><UiIcon name="previous"/></button><button className="play" onClick={togglePlay} disabled={!src}>{playing ? "Ⅱ" : <UiIcon name="play"/>}</button><button onClick={() => seek(trimEnd)} aria-label="Go to end"><UiIcon name="next"/></button>
               <span>{formatTime(current)} <i>/</i> {formatTime(duration)}</span>
-              <button className={muted ? "muted" : ""} onClick={() => setMuted(!muted)}>{muted ? "🔇" : "🔊"}</button><button onClick={() => setNotice("Preview fits automatically in your workspace.")}>⌗</button>
+              <button className={muted ? "muted" : ""} onClick={() => setMuted(!muted)} aria-label={muted?"Unmute":"Mute"}><UiIcon name={muted?"volumeOff":"volume"}/></button><button onClick={() => setNotice("Preview fits automatically in your workspace.")} aria-label="Fit preview"><UiIcon name="fit"/></button>
             </div>
           </div>
 
           <div className="timeline-card">
-            <div className="timeline-head"><strong>Timeline <small>{cuts.length?`${cuts.length+1} clips`:"1 clip"}</small></strong><div className="timeline-actions"><button className="history-btn" onClick={undoCut} disabled={!cutHistory.length} aria-label="Undo cut" title="Undo cut">↶</button><button className="history-btn" onClick={redoCut} disabled={!redoCuts.length} aria-label="Redo cut" title="Redo cut">↷</button><button className="split-btn" onClick={addCut} disabled={!src} aria-label="Split at playhead" title="Split at playhead">✂</button><button onClick={() => setSpeed(speed === 2 ? .5 : speed + .5)}>{speed}×</button><button onClick={() => {setTrimStart(0);setTrimEnd(duration)}}>Reset trim</button></div></div>
+            <div className="timeline-head"><strong>Timeline <small>{cuts.length?`${cuts.length+1} clips`:"1 clip"}</small></strong><div className="timeline-actions"><button className="history-btn" onClick={undoCut} disabled={!cutHistory.length} aria-label="Undo cut" title="Undo cut"><UiIcon name="undo"/></button><button className="history-btn" onClick={redoCut} disabled={!redoCuts.length} aria-label="Redo cut" title="Redo cut"><UiIcon name="redo"/></button><button className="split-btn" onClick={addCut} disabled={!src} aria-label="Split at playhead" title="Split at playhead"><UiIcon name="scissors"/></button><button onClick={() => setSpeed(speed === 2 ? .5 : speed + .5)}>{speed}×</button><button onClick={() => {setTrimStart(0);setTrimEnd(duration)}}>Reset trim</button></div></div>
             <div className="clip-meta"><span>{src ? fileName : "No clip loaded"}</span><b>{formatTime(current)} / {formatTime(duration)}</b></div>
             <div className="ruler">{Array.from({length:7},(_,i)=><span key={i}>{formatTime(duration*(i/6))}</span>)}</div>
             <div className="track">
@@ -326,23 +327,23 @@ export default function Home() {
 
         <aside className="inspector">
           {!["Effects","Filters","Adjust","AI editor"].includes(activeTool) ? <div className="tool-panel">
-            <div className="tool-panel-head"><div><span>{activeTool==="Media"?"▣":activeTool==="Audio"?"♫":activeTool==="Text"?"T":activeTool==="Stickers"?"★":activeTool==="Transitions"?"↝":activeTool==="Captions"?"CC":"▤"}</span><strong>{activeTool}</strong></div></div>
-            {activeTool==="Media"&&<><button className="primary-tool-action" onClick={()=>inputRef.current?.click()}>＋ Import media</button><div className="media-library">{src?<div className="media-card"><div className="media-thumb">{thumbnails[0]?<img src={thumbnails[0]} alt="Video thumbnail"/>:<span>▶</span>}</div><b>{fileName}</b><small>{formatTime(duration)}</small></div>:<p>Your imported videos will appear here.</p>}</div></>}
-            {activeTool==="Audio"&&<><p className="tool-help">Control clip sound or add your own music.</p><button className="setting-row" onClick={()=>setMuted(!muted)}><span>{muted?"Unmute clip":"Mute clip audio"}</span><b>{muted?"MUTED":"ON"}</b></button><button className="primary-tool-action music-upload" onClick={()=>musicInputRef.current?.click()}>♫ Upload music</button>{musicSrc?<div className="music-track"><span>♫</span><div><b>{musicName}</b><small>Plays with your video</small></div><button onClick={()=>{musicRef.current?.pause();URL.revokeObjectURL(musicSrc);setMusicSrc("");setMusicName("")}}>×</button></div>:<div className="audio-drop">MP3, WAV, M4A, OGG</div>}</>}
+            <div className="tool-panel-head"><div><span><UiIcon name={(activeTool==="Media"?"media":activeTool==="Audio"?"audio":activeTool==="Text"?"text":activeTool==="Stickers"?"star":activeTool==="Transitions"?"transition":activeTool==="Captions"?"captions":"template") as UiIconName}/></span><strong>{activeTool}</strong></div></div>
+            {activeTool==="Media"&&<><button className="primary-tool-action" onClick={()=>inputRef.current?.click()}><UiIcon name="upload"/> Import media</button><div className="media-library">{src?<div className="media-card"><div className="media-thumb">{thumbnails[0]?<img src={thumbnails[0]} alt="Video thumbnail"/>:<span><UiIcon name="play"/></span>}</div><b>{fileName}</b><small>{formatTime(duration)}</small></div>:<p>Your imported videos will appear here.</p>}</div></>}
+            {activeTool==="Audio"&&<><p className="tool-help">Control clip sound or add your own music.</p><button className="setting-row" onClick={()=>setMuted(!muted)}><span>{muted?"Unmute clip":"Mute clip audio"}</span><b>{muted?"MUTED":"ON"}</b></button><button className="primary-tool-action music-upload" onClick={()=>musicInputRef.current?.click()}><UiIcon name="audio"/> Upload music</button>{musicSrc?<div className="music-track"><span><UiIcon name="audio"/></span><div><b>{musicName}</b><small>Plays with your video</small></div><button onClick={()=>{musicRef.current?.pause();URL.revokeObjectURL(musicSrc);setMusicSrc("");setMusicName("")}}>×</button></div>:<div className="audio-drop">MP3, WAV, M4A, OGG</div>}</>}
             {activeTool==="Text"&&<><p className="tool-help">Add a title directly over your video.</p><input className="tool-input" value={overlayText} onChange={e=>setOverlayText(e.target.value)} placeholder="Type your title…"/><div className="text-styles"><button onClick={()=>setOverlayText("YOUR STORY")}>BOLD</button><button onClick={()=>setOverlayText("A moment to remember")}>Elegant</button><button onClick={()=>setOverlayText("")}>Clear</button></div></>}
             {activeTool==="Stickers"&&<><p className="tool-help">Choose a sticker for the preview.</p><div className="sticker-grid">{["🔥","✨","❤️","😂","⭐","☀️","🎬","🚀","💯"].map(s=><button key={s} onClick={()=>setSticker(sticker===s?"":s)}>{s}</button>)}</div></>}
             {activeTool==="Transitions"&&<><p className="tool-help">Pick a transition style for your next split.</p><div className="transition-list">{["Dissolve","Fade to black","Slide left","Zoom","Flash"].map(t=><button key={t} onClick={()=>setNotice(`${t} transition selected. Add another clip to use it.`)}><i/>{t}<span>＋</span></button>)}</div></>}
             {activeTool==="Captions"&&<><p className="tool-help">Generate and style subtitles for your video.</p><button className="primary-tool-action" onClick={()=>setCaptions(!captions)}>{captions?"Remove captions":"Generate auto captions"}</button><label className="caption-lang">Language<select><option>English (US)</option><option>Spanish</option><option>French</option></select></label></>}
             {activeTool==="Templates"&&<><p className="tool-help">Apply a ready-made editing style.</p><div className="template-list"><button onClick={()=>{setFilter("Warm");setSpeed(1)}}><i className="warm"/><b>Golden hour</b><small>Warm · Cinematic</small></button><button onClick={()=>{setFilter("Cool");setSpeed(1.5)}}><i className="cool"/><b>Fast vlog</b><small>Cool · Energetic</small></button><button onClick={()=>{setFilter("Mono");setSpeed(.5)}}><i className="mono"/><b>Film noir</b><small>Mono · Slow</small></button></div></>}
-          </div> : <><div className="inspector-tabs"><button className={panel==="ai"?"active":""} onClick={()=>{setPanel("ai");setActiveTool("AI editor")}}><span>✦</span> AI editor</button><button className={panel==="adjust"?"active":""} onClick={()=>{setPanel("adjust");setActiveTool("Adjust")}}>Adjust</button></div>
+          </div> : <><div className="inspector-tabs"><button className={panel==="ai"?"active":""} onClick={()=>{setPanel("ai");setActiveTool("AI editor")}}><span><UiIcon name="ai"/></span> AI editor</button><button className={panel==="adjust"?"active":""} onClick={()=>{setPanel("adjust");setActiveTool("Adjust")}}>Adjust</button></div>
           {panel === "ai" ? <div className="ai-panel">
-            <div className="ai-head"><div className="ai-orb">✦</div><div><strong>Solara AI</strong><span><i /> Ready to edit</span></div></div>
+            <div className="ai-head"><div className="ai-orb"><UiIcon name="ai"/></div><div><strong>Solara AI</strong><span><i /> Ready to edit</span></div></div>
             <div className="chat">{messages.map((m,i)=><div key={i} className={`bubble ${m.role}`}>{m.text}</div>)}{thinking&&<div className="bubble ai typing"><i/><i/><i/></div>}</div>
             <div className="quick-title">TRY A QUICK EDIT</div>
-            <div className="quick-edits"><button onClick={()=>askAI("Cut the first 3 seconds")}>✂ Cut first 3s</button><button onClick={()=>askAI("Make it cinematic")}>◐ Cinematic look</button><button onClick={()=>askAI("Speed it up")}>» Speed it up</button><button onClick={()=>askAI("Mute the audio")}>♩ Remove sound</button></div>
-            <div className="composer"><textarea value={prompt} onChange={(e)=>setPrompt(e.target.value)} onKeyDown={(e)=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();askAI()}}} placeholder="Ask AI to edit your video…"/><button onClick={()=>askAI()} disabled={!prompt.trim()}>↑</button><small>Enter to send · AI applies edits instantly</small></div>
+            <div className="quick-edits"><button onClick={()=>askAI("Cut the first 3 seconds")}><UiIcon name="scissors"/> Cut first 3s</button><button onClick={()=>askAI("Make it cinematic")}><UiIcon name="filter"/> Cinematic look</button><button onClick={()=>askAI("Speed it up")}><UiIcon name="speed"/> Speed it up</button><button onClick={()=>askAI("Mute the audio")}><UiIcon name="mute"/> Remove sound</button></div>
+            <div className="composer"><textarea value={prompt} onChange={(e)=>setPrompt(e.target.value)} onKeyDown={(e)=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();askAI()}}} placeholder="Ask AI to edit your video…"/><button onClick={()=>askAI()} disabled={!prompt.trim()} aria-label="Send edit request"><UiIcon name="send"/></button><small>Enter to send · AI applies edits instantly</small></div>
           </div> : <div className="adjust-panel">
-          <div className="panel-title"><div><span>✦</span><strong>Looks & effects</strong></div><button onClick={() => setFilter("Clean")}>Reset</button></div>
+          <div className="panel-title"><div><span><UiIcon name="spark"/></span><strong>Looks & effects</strong></div><button onClick={() => setFilter("Clean")}>Reset</button></div>
           <p className="eyebrow">FILTERS</p>
           <div className="filter-grid">{filters.map((item) => <button key={item.name} className={filter===item.name ? "filter selected" : "filter"} onClick={()=>setFilter(item.name)}><span style={{background:item.color}}>{filter===item.name && <i>✓</i>}</span>{item.name}</button>)}</div>
           <div className="divider" />
